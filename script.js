@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Industry benchmark data with sources
     const industryBenchmarks = {
         'technology': {
             sla: { value: 2, unit: 'hrs', source: 'HDI 2023 Report' },
@@ -59,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function() {
             checkbox.innerHTML = `
                 <input class="form-check-input additional-metric-checkbox" type="checkbox" id="${metric}" value="${metric}">
                 <label class="form-check-label" for="${metric}">
-                    ${formatMetricName(metric)} (Industry Avg: ${additionalMetrics[metric].value}${additionalMetrics[metric].unit})
+                    ${formatMetricName(metric)}
                 </label>
             `;
             additionalMetricsContainer.appendChild(checkbox);
@@ -91,7 +90,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 selectedAdditionalMetrics
             );
 
-            // Show and scroll to results
             const resultsSection = document.getElementById('results');
             resultsSection.classList.remove('d-none');
             resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -140,17 +138,21 @@ document.addEventListener('DOMContentLoaded', function() {
             const card = document.createElement('div');
             card.className = 'col';
             
-            // Adjust performanceDiff: positive means better, negative or zero means equal/worse
+            // Lower is better (e.g., time): positive diff = better
+            // Higher is better (e.g., cost): negative diff = better
             const performanceDiff = isLowerBetter 
                 ? (benchmark.value - userValue) 
                 : (userValue - benchmark.value);
             
             let performanceClass, performanceIcon, performanceText;
             
-            if (performanceDiff > 0) {
+            // Better if diff > 0 (lower-is-better) or diff < 0 (higher-is-better)
+            const isBetter = (isLowerBetter && performanceDiff > 0) || (!isLowerBetter && performanceDiff < 0);
+            
+            if (isBetter || performanceDiff === 0) {
                 performanceClass = 'text-success';
                 performanceIcon = '<i class="bi bi-check-circle-fill"></i>';
-                performanceText = 'Better than average';
+                performanceText = 'Meets or exceeds average';
             } else {
                 performanceClass = 'text-danger';
                 performanceIcon = '<i class="bi bi-exclamation-triangle-fill"></i>';
@@ -158,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const percentDiff = Math.min(Math.abs(performanceDiff / benchmark.value * 100), 100);
-            const progressBarClass = performanceDiff > 0 ? 'bg-success' : 'bg-danger';
+            const progressBarClass = (isBetter || performanceDiff === 0) ? 'bg-success' : 'bg-danger';
             
             card.innerHTML = `
                 <div class="card h-100">
@@ -181,7 +183,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         coreMetricsDiv.appendChild(createMetricCard('sla', userMetrics.sla, benchmarks.sla, true));
-        coreMetricsDiv.appendChild(createMetricCard('cost', userMetrics.cost, benchmarks.cost, false));
+        coreMetricsDiv.appendChild(createMetricCard('cost', userMetrics.cost, benchmarks.cost, true)); // Lower cost is better
         coreMetricsDiv.appendChild(createMetricCard('procurement', userMetrics.procurement, benchmarks.procurement, true));
         
         resultsDiv.appendChild(coreMetricsDiv);
