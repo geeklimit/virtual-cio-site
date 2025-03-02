@@ -179,12 +179,15 @@ document.addEventListener('DOMContentLoaded', function() {
             return card;
         }
         
-        coreMetricsDiv.appendChild(createMetricCard('sla', userMetrics.sla, benchmarks.sla, true));
-        coreMetricsDiv.appendChild(createMetricCard('cost', userMetrics.cost, benchmarks.cost, true));
-        coreMetricsDiv.appendChild(createMetricCard('procurement', userMetrics.procurement, benchmarks.procurement, true));
+        const coreMetrics = [];
+        coreMetrics.push({ key: 'sla', card: createMetricCard('sla', userMetrics.sla, benchmarks.sla, true) });
+        coreMetrics.push({ key: 'cost', card: createMetricCard('cost', userMetrics.cost, benchmarks.cost, true) });
+        coreMetrics.push({ key: 'procurement', card: createMetricCard('procurement', userMetrics.procurement, benchmarks.procurement, true) });
         
+        coreMetrics.forEach(metric => coreMetricsDiv.appendChild(metric.card));
         resultsDiv.appendChild(coreMetricsDiv);
         
+        const additionalMetricsResults = [];
         if (Object.keys(additionalSelectedMetrics).length > 0) {
             const additionalHeader = document.createElement('h4');
             additionalHeader.className = 'mt-4 mb-3';
@@ -194,23 +197,59 @@ document.addEventListener('DOMContentLoaded', function() {
             const additionalMetricsDiv = document.createElement('div');
             additionalMetricsDiv.className = 'row row-cols-1 row-cols-md-2 g-4';
             
-            additionalMetricsDiv.appendChild(createMetricCard('projects_on_time', userMetrics.projects_on_time, additionalMetrics.projects_on_time, false));
-            additionalMetricsDiv.appendChild(createMetricCard('security_incidents', userMetrics.security_incidents, additionalMetrics.security_incidents, true));
-            additionalMetricsDiv.appendChild(createMetricCard('uptime', userMetrics.uptime, additionalMetrics.uptime, false));
-            additionalMetricsDiv.appendChild(createMetricCard('user_satisfaction', userMetrics.user_satisfaction, additionalMetrics.user_satisfaction, false));
-            additionalMetricsDiv.appendChild(createMetricCard('avg_ticket_resolution', userMetrics.avg_ticket_resolution, additionalMetrics.avg_ticket_resolution, true));
+            additionalMetricsResults.push({ key: 'projects_on_time', card: createMetricCard('projects_on_time', userMetrics.projects_on_time, additionalMetrics.projects_on_time, false) });
+            additionalMetricsResults.push({ key: 'security_incidents', card: createMetricCard('security_incidents', userMetrics.security_incidents, additionalMetrics.security_incidents, true) });
+            additionalMetricsResults.push({ key: 'uptime', card: createMetricCard('uptime', userMetrics.uptime, additionalMetrics.uptime, false) });
+            additionalMetricsResults.push({ key: 'user_satisfaction', card: createMetricCard('user_satisfaction', userMetrics.user_satisfaction, additionalMetrics.user_satisfaction, false) });
+            additionalMetricsResults.push({ key: 'avg_ticket_resolution', card: createMetricCard('avg_ticket_resolution', userMetrics.avg_ticket_resolution, additionalMetrics.avg_ticket_resolution, true) });
+            
+            additionalMetricsResults.forEach(metric => {
+                if (userMetrics[metric.key] !== undefined) {
+                    additionalMetricsDiv.appendChild(metric.card);
+                }
+            });
             
             resultsDiv.appendChild(additionalMetricsDiv);
         }
         
+        // Dynamic recommendation based on results
+        const allMetrics = [...coreMetrics, ...additionalMetricsResults.filter(m => userMetrics[m.key] !== undefined)];
+        const needsImprovementCount = allMetrics.filter(metric => {
+            const isLowerBetter = (metric.key === 'sla' || metric.key === 'cost' || metric.key === 'procurement' || metric.key === 'security_incidents' || metric.key === 'avg_ticket_resolution');
+            const performanceDiff = isLowerBetter 
+                ? (metric.card.querySelector('.card-body p:nth-child(3) strong').textContent.split(' ')[0] - userMetrics[metric.key]) 
+                : (userMetrics[metric.key] - metric.card.querySelector('.card-body p:nth-child(3) strong').textContent.split(' ')[0]);
+            return !((isLowerBetter && performanceDiff > 0) || (!isLowerBetter && performanceDiff > 0) || performanceDiff === 0);
+        }).length;
+
+        const totalAvailableMetrics = 8; // 3 core + 5 additional
+        const usedMetricsCount = allMetrics.length;
+        const allGood = needsImprovementCount === 0;
+
         const recommendationDiv = document.createElement('div');
         recommendationDiv.className = 'alert alert-primary mt-4';
-        recommendationDiv.innerHTML = `
-            <h4>What's Next?</h4>
-            <p>Based on your metrics, there are opportunities to optimize your IT operations and strategy. 
-            Book a consultation to discuss how my 25+ years of IT leadership experience can help you improve these key metrics.</p>
-            <a href="/services.html" class="btn btn-primary">See Available Services</a>
-        `;
+        
+        if (allGood) {
+            recommendationDiv.innerHTML = `
+                <h4>Great Work!</h4>
+                <p>Your entered IT metrics meet or exceed industry averages—well done! Even top performers can unlock new potential with expert guidance. ${
+                    usedMetricsCount < totalAvailableMetrics 
+                    ? 'For a complete picture, consider assessing all available metrics below.' 
+                    : ''
+                }</p>
+                <a href="/services.html" class="btn btn-primary">Explore Consulting Services</a>
+            `;
+        } else {
+            recommendationDiv.innerHTML = `
+                <h4>What's Next?</h4>
+                <p>Based on your metrics, there are opportunities to optimize your IT operations and strategy. ${
+                    usedMetricsCount < totalAvailableMetrics 
+                    ? 'Complete the full assessment for a comprehensive view of your IT performance.' 
+                    : ''
+                }</p>
+                <a href="/services.html" class="btn btn-primary">See Available Services</a>
+            `;
+        }
         
         resultsDiv.appendChild(recommendationDiv);
     }
