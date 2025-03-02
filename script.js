@@ -33,7 +33,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // Additional metrics data
     const additionalMetrics = {
         'projects_on_time': { value: 68, unit: '%', source: 'PMI Pulse of the Profession' },
         'security_incidents': { value: 3.5, unit: 'per year', source: 'Ponemon Institute' },
@@ -42,7 +41,6 @@ document.addEventListener('DOMContentLoaded', function() {
         'avg_ticket_resolution': { value: 8.2, unit: 'hrs', source: 'ServiceDesk Institute' }
     };
 
-    // Initialize the industry dropdown
     const industrySelect = document.getElementById('industry-select');
     if (industrySelect) {
         for (const industry in industryBenchmarks) {
@@ -53,7 +51,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Initialize additional metrics section
     const additionalMetricsContainer = document.getElementById('additional-metrics-container');
     if (additionalMetricsContainer) {
         for (const metric in additionalMetrics) {
@@ -69,22 +66,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Handle form submission
     const metricsForm = document.getElementById('metrics-form');
     if (metricsForm) {
         metricsForm.addEventListener('submit', (e) => { 
             e.preventDefault();
 
-            // Get selected industry
             const industry = document.getElementById('industry-select').value || 'other';
             const benchmarks = industryBenchmarks[industry];
             
-            // Get form values
             const sla = parseFloat(document.querySelector("[name='sla']").value) || 0;
             const cost = parseFloat(document.querySelector("[name='cost']").value) || 0;
             const procurement = parseFloat(document.querySelector("[name='procurement']").value) || 0;
             
-            // Get selected additional metrics
             const selectedAdditionalMetrics = {};
             document.querySelectorAll('.additional-metric-checkbox:checked').forEach(checkbox => {
                 const metricKey = checkbox.value;
@@ -92,26 +85,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 selectedAdditionalMetrics[metricKey] = metricValue;
             });
 
-            // Generate the comparison chart
             generateComparisonChart(
                 { sla, cost, procurement, ...selectedAdditionalMetrics },
                 benchmarks,
                 selectedAdditionalMetrics
             );
 
-            // Show the results section
-            document.getElementById('results').classList.remove('d-none');
+            // Show and scroll to results
+            const resultsSection = document.getElementById('results');
+            resultsSection.classList.remove('d-none');
+            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
     }
 
-    // Setup additional metrics input fields when checkboxes are clicked
     document.querySelectorAll('.additional-metric-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', function() {
             const metricKey = this.value;
             const inputContainer = document.getElementById('additional-metrics-inputs');
             
             if (this.checked) {
-                // Add input field for this metric
                 const inputDiv = document.createElement('div');
                 inputDiv.className = 'mb-3 additional-metric-input';
                 inputDiv.id = `input-${metricKey}`;
@@ -124,7 +116,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
                 inputContainer.appendChild(inputDiv);
             } else {
-                // Remove input field for this metric
                 const inputToRemove = document.getElementById(`input-${metricKey}`);
                 if (inputToRemove) {
                     inputToRemove.remove();
@@ -133,36 +124,30 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Function to generate the comparison visualization
     function generateComparisonChart(userMetrics, benchmarks, additionalSelectedMetrics) {
         const resultsDiv = document.getElementById('results');
-        
-        // Clear previous results
         resultsDiv.innerHTML = '';
         
-        // Create header
         const header = document.createElement('h3');
         header.className = 'mb-4';
         header.textContent = 'Your IT Performance Comparison';
         resultsDiv.appendChild(header);
         
-        // Create core metrics comparisons
         const coreMetricsDiv = document.createElement('div');
         coreMetricsDiv.className = 'row row-cols-1 row-cols-md-3 g-4 mb-4';
         
-        // Helper function to create metric card
         function createMetricCard(metricKey, userValue, benchmark, isLowerBetter = true) {
             const card = document.createElement('div');
             card.className = 'col';
             
-            // Determine if performance is good or needs improvement
+            // Adjust performanceDiff: positive means better, negative or zero means equal/worse
             const performanceDiff = isLowerBetter 
-                ? benchmark.value - userValue 
-                : userValue - benchmark.value;
+                ? (benchmark.value - userValue) 
+                : (userValue - benchmark.value);
             
             let performanceClass, performanceIcon, performanceText;
             
-            if (performanceDiff >= 0) {
+            if (performanceDiff > 0) {
                 performanceClass = 'text-success';
                 performanceIcon = '<i class="bi bi-check-circle-fill"></i>';
                 performanceText = 'Better than average';
@@ -172,9 +157,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 performanceText = 'Needs improvement';
             }
             
-            // Calculate percentage difference for the progress bar
             const percentDiff = Math.min(Math.abs(performanceDiff / benchmark.value * 100), 100);
-            const progressBarClass = performanceDiff >= 0 ? 'bg-success' : 'bg-danger';
+            const progressBarClass = performanceDiff > 0 ? 'bg-success' : 'bg-danger';
             
             card.innerHTML = `
                 <div class="card h-100">
@@ -196,14 +180,12 @@ document.addEventListener('DOMContentLoaded', function() {
             return card;
         }
         
-        // Add core metrics cards
         coreMetricsDiv.appendChild(createMetricCard('sla', userMetrics.sla, benchmarks.sla, true));
         coreMetricsDiv.appendChild(createMetricCard('cost', userMetrics.cost, benchmarks.cost, false));
         coreMetricsDiv.appendChild(createMetricCard('procurement', userMetrics.procurement, benchmarks.procurement, true));
         
         resultsDiv.appendChild(coreMetricsDiv);
         
-        // Add additional metrics if selected
         if (Object.keys(additionalSelectedMetrics).length > 0) {
             const additionalHeader = document.createElement('h4');
             additionalHeader.className = 'mt-4 mb-3';
@@ -214,7 +196,7 @@ document.addEventListener('DOMContentLoaded', function() {
             additionalMetricsDiv.className = 'row row-cols-1 row-cols-md-2 g-4';
             
             for (const metricKey in additionalSelectedMetrics) {
-                const isLowerBetter = metricKey === 'security_incidents' ? true : false;
+                const isLowerBetter = (metricKey === 'security_incidents' || metricKey === 'avg_ticket_resolution');
                 additionalMetricsDiv.appendChild(
                     createMetricCard(
                         metricKey, 
@@ -228,7 +210,6 @@ document.addEventListener('DOMContentLoaded', function() {
             resultsDiv.appendChild(additionalMetricsDiv);
         }
         
-        // Add recommendation and CTA
         const recommendationDiv = document.createElement('div');
         recommendationDiv.className = 'alert alert-primary mt-4';
         recommendationDiv.innerHTML = `
@@ -241,7 +222,6 @@ document.addEventListener('DOMContentLoaded', function() {
         resultsDiv.appendChild(recommendationDiv);
     }
 
-    // Helper function to format metric keys into readable names
     function formatMetricName(metricKey) {
         return metricKey.split('_')
             .map(word => word.charAt(0).toUpperCase() + word.slice(1))
