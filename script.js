@@ -138,16 +138,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const card = document.createElement('div');
             card.className = 'col';
             
-            // Lower is better (e.g., time): positive diff = better
-            // Higher is better (e.g., cost): negative diff = better
             const performanceDiff = isLowerBetter 
                 ? (benchmark.value - userValue) 
                 : (userValue - benchmark.value);
             
-            let performanceClass, performanceIcon, performanceText;
+            const isBetter = (isLowerBetter && performanceDiff > 0) || (!isLowerBetter && performanceDiff > 0);
             
-            // Better if diff > 0 (lower-is-better) or diff < 0 (higher-is-better)
-            const isBetter = (isLowerBetter && performanceDiff > 0) || (!isLowerBetter && performanceDiff < 0);
+            let performanceClass, performanceIcon, performanceText;
             
             if (isBetter || performanceDiff === 0) {
                 performanceClass = 'text-success';
@@ -183,7 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         coreMetricsDiv.appendChild(createMetricCard('sla', userMetrics.sla, benchmarks.sla, true));
-        coreMetricsDiv.appendChild(createMetricCard('cost', userMetrics.cost, benchmarks.cost, true)); // Lower cost is better
+        coreMetricsDiv.appendChild(createMetricCard('cost', userMetrics.cost, benchmarks.cost, true));
         coreMetricsDiv.appendChild(createMetricCard('procurement', userMetrics.procurement, benchmarks.procurement, true));
         
         resultsDiv.appendChild(coreMetricsDiv);
@@ -197,17 +194,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const additionalMetricsDiv = document.createElement('div');
             additionalMetricsDiv.className = 'row row-cols-1 row-cols-md-2 g-4';
             
-            for (const metricKey in additionalSelectedMetrics) {
-                const isLowerBetter = (metricKey === 'security_incidents' || metricKey === 'avg_ticket_resolution');
-                additionalMetricsDiv.appendChild(
-                    createMetricCard(
-                        metricKey, 
-                        additionalSelectedMetrics[metricKey], 
-                        additionalMetrics[metricKey], 
-                        isLowerBetter
-                    )
-                );
-            }
+            additionalMetricsDiv.appendChild(createMetricCard('projects_on_time', userMetrics.projects_on_time, additionalMetrics.projects_on_time, false));
+            additionalMetricsDiv.appendChild(createMetricCard('security_incidents', userMetrics.security_incidents, additionalMetrics.security_incidents, true));
+            additionalMetricsDiv.appendChild(createMetricCard('uptime', userMetrics.uptime, additionalMetrics.uptime, false));
+            additionalMetricsDiv.appendChild(createMetricCard('user_satisfaction', userMetrics.user_satisfaction, additionalMetrics.user_satisfaction, false));
+            additionalMetricsDiv.appendChild(createMetricCard('avg_ticket_resolution', userMetrics.avg_ticket_resolution, additionalMetrics.avg_ticket_resolution, true));
             
             resultsDiv.appendChild(additionalMetricsDiv);
         }
