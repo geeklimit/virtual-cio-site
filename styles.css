@@ -117,6 +117,17 @@ body {
     z-index: 1;
 }
 
+.rounded-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%; /* Ensures circular shape */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem; /* Adjust if initials look too large/small */
+    line-height: 1; /* Ensures text fits neatly */
+}
+
 /* Services Cards */
 .service-card {
     border: none;
